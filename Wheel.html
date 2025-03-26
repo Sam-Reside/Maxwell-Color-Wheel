@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Maxwell’s Color Mixing Wheel</title>
+  <style>
+    /* Global Styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: #f4f4f7;
+  color: #333;
+  padding-bottom: 120px;
+}
+
+h1, h2 {
+  font-weight: 600;
+  color: #222;
+}
+
+.main-container {
+  display: flex;
+  flex-direction: row;
+  min-height: calc(100vh - 120px);
+}
+
+/* Left Panel */
+.left-panel {
+  width: 340px;
+  background: #fff;
+  border-right: 1px solid #e0e0e0;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.instructions {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  color: #555;
+}
+
+.controls label {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  display: block;
+  color: #444;
+}
+
+.controls select,
+.controls input[type="color"],
+.controls input[type="range"],
+.controls button {
+  width: 100%;
+  padding: 0.6rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+  background: #fafafa;
+  transition: border 0.2s ease;
+}
+
+.controls input[type="range"] {
+  padding: 0;
+}
+
+.controls select:focus,
+.controls input:focus,
+.controls button:focus {
+  outline: none;
+  border-color: #777;
+}
+
+.controls button {
+  background: #3367d6;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.controls button:hover {
+  background: #274fb2;
+}
+
+.inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.swatch {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Right Panel */
+.right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  box-sizing: border-box;
+  position: relative;
+}
+
+#wheelCanvas {
+  width: 12cm;
+  height: 12cm;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  border-radius: 50%;
+  margin-bottom: 1.5rem;
+}
+
+/* Spinning Animation */
+.spinning {
+  animation-name: spin;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Print Instructions */
+#printInstructions {
+  display: none;
+  text-align: left;
+  max-width: 500px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+@media print {
+  .left-panel {
+    display: none;
+  }
+
+  .footer {
+    display: none;
+  }
+  #printInstructions {
+    display: block;
+  }
+  body {
+    margin: 1cm;
+    background: #fff;
+  }
+  #wheelCanvas {
+    margin: 0 auto;
+  }
+}
+
+/* Footer */
+.footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-top: 1px solid #ddd;
+  padding: 1rem 2rem;
+  font-size: 0.95rem;
+  text-align: center;
+  box-shadow: 0 -1px 5px rgba(0,0,0,0.05);
+}
+
+/* Educational Explanation Panel */
+.wheel-explanation {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 300px;
+  background: rgba(255, 255, 255, 0.85);
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 0 6px rgba(0,0,0,0.1);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #333;
+  z-index: 0;
+}
+
+.wheel-explanation h2 {
+  font-size: 1.2rem;
+  margin-top: 0;
+}
+
+/* Hide on small screens */
+@media (max-width: 900px) {
+  .wheel-explanation {
+    display: none;
+  }
+}
+
+
+.footer .warning {
+  color: #c62828;
+  font-weight: bold;
+}
+
+  </style>
+</head>
+<body>
+  <!-- Main container for left and right panels -->
+  <div class="main-container">
+    <!-- Left Panel: Quick Instructions & Controls -->
+    <div class="left-panel">
+      <h1>Maxwell’s Color Wheel Simulation</h1>
+      <div class="instructions">
+        <strong>How to Use:</strong><br>
+        1. Pick a color<br>
+        2. (Optional) Enable brightness correction<br>
+        3. Choose layout (12 or 48 segments)<br>
+        4. Adjust spin speed (slider reversed: right = faster)<br>
+        5. Click “Spin” to begin the simulation.<br>
+	6. Click “Print” to create a physical 12 cm wheel<br>
+      </div>
+      <div class="controls">
+        <!-- Color Picker + Swatch -->
+        <label for="colorPicker">Color:</label>
+        <div class="inline">
+          <input type="color" id="colorPicker" value="#ffff00">
+          <div class="swatch" id="colorSwatch" style="background-color: #ffff00;"></div>
+        </div>
+        <!-- Brightness Correction Toggle -->
+        <div class="inline">
+          <input type="checkbox" id="brightnessToggle" checked>
+          <label for="brightnessToggle" style="font-weight:normal; margin:0;">
+            Brightness Correction
+          </label>
+        </div>
+        <!-- Layout Mode -->
+        <label for="layoutSelect">Layout:</label>
+        <select id="layoutSelect">
+          <option value="12">Standard (12 segments)</option>
+          <option value="48">Repeated (48 segments)</option>
+        </select>
+        <!-- Spin Speed Slider -->
+        <label for="speedSlider">Spin Speed (← Slow • Fast →):</label>
+        <input type="range" id="speedSlider" min="0.05" max="10" step="0.05" value="10">
+        <div id="speedValue" style="text-align:center; margin-bottom:1rem;">10.00x</div>
+        <!-- Buttons -->
+        <button id="spinButton">Spin</button>
+        <button id="printButton">Print</button>
+      </div>
+    </div>
+
+    <!-- Right Panel: Wheel & Print Instructions -->
+    <div class="right-panel">
+      <canvas id="wheelCanvas" width="1200" height="1200"></canvas>
+      <div id="printInstructions">
+        <h2>Print & Assembly Instructions</h2>
+        <ol>
+          <li>Print this page at 100% scale (no shrinking).</li>
+          <li>The printed circle will measure approximately 12 cm in diameter.</li>
+          <li>Cut out the circle along the black border.</li>
+          <li>Optional: Glue onto cardboard or an old DVD for durability.</li>
+          <li>Punch a small hole in the center and mount the wheel on a pivot (e.g., a pushpin).</li>
+          <li>Spin the wheel to observe how the segments blend into your chosen color.</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+
+<div class="wheel-explanation">
+  <h2>About Maxwell’s Wheel</h2>
+  <p>
+    This simulation is based on the experiments of <strong>James Clerk Maxwell</strong>, who demonstrated that spinning segments of red, green, and blue light causes the colors to blend through additive mixing.
+  </p>
+  <p>
+    The wheel is divided into segments based on the selected color’s red, green, and blue proportions. When spun rapidly, the segments blur together, and your brain perceives a single blended hue.
+  </p>
+  <p>
+    Optional brightness correction adds white or black to simulate realistic light intensity.
+  </p>
+</div>
+
+  <!-- Fixed Footer: Expanded Explanation & Epilepsy Warning -->
+<div class="footer">
+  <p class="warning">
+    ⚠️ WARNING: Rapid spinning animations may trigger seizures in individuals with photosensitive epilepsy. Viewer discretion is advised.
+  </p>
+<p>This project was built by Samuel Reside with assistance from ChatGPT by OpenAI</p>
+</div>
+
+
+  <script>
+    const colorInput       = document.getElementById('colorPicker');
+    const brightnessToggle = document.getElementById('brightnessToggle');
+    const layoutSelect     = document.getElementById('layoutSelect');
+    const speedSlider      = document.getElementById('speedSlider');
+    const speedValue       = document.getElementById('speedValue');
+    const spinButton       = document.getElementById('spinButton');
+    const printButton      = document.getElementById('printButton');
+    const canvas           = document.getElementById('wheelCanvas');
+    const ctx              = canvas.getContext('2d');
+    const colorSwatch      = document.getElementById('colorSwatch');
+
+    let isSpinning = false;
+
+    // Convert hex color to {r, g, b} object.
+    function hexToRGB(hex) {
+      const h = hex.replace('#', '');
+      return {
+        r: parseInt(h.substring(0,2), 16),
+        g: parseInt(h.substring(2,4), 16),
+        b: parseInt(h.substring(4,6), 16)
+      };
+    }
+
+    // Convert RGB to HSL, returns {h, s, l} with l in [0,1].
+    function rgbToHsl(r, g, b) {
+      r /= 255; g /= 255; b /= 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      let h, s, l = (max + min) / 2;
+      if (max === min) {
+        h = s = 0;
+      } else {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch(max){
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h *= 60;
+      }
+      return { h, s, l };
+    }
+
+    // Compute the base 12-segment pattern from the chosen color.
+    function computeBasePattern() {
+      const hexColor = colorInput.value;
+      const { r, g, b } = hexToRGB(hexColor);
+      let sum = r + g + b;
+
+// Handle pure black or pure white without brightness correction
+if (!brightnessToggle.checked) {
+  if (r === 0 && g === 0 && b === 0) {
+    return Array(12).fill("#000000");
+  }
+  if (r === 255 && g === 255 && b === 255) {
+    return Array(12).fill("#FFFFFF");
+  }
+}
+
+      const { l } = rgbToHsl(r, g, b);
+
+      // Normalized RGB.
+      const normR = r / sum;
+      const normG = g / sum;
+      const normB = b / sum;
+
+      // Extra white/black based on brightness correction.
+      let extraWhite = 0, extraBlack = 0;
+      if (brightnessToggle.checked) {
+        if (l > 0.5) {
+          extraWhite = (l - 0.5) * 2;
+        } else if (l < 0.5) {
+          extraBlack = (0.5 - l) * 2;
+        }
+      }
+      const baseFactor = 1 - (extraWhite + extraBlack);
+
+      // Final channel proportions.
+      const propR = normR * baseFactor;
+      const propG = normG * baseFactor;
+      const propB = normB * baseFactor;
+
+      const totalBase = 12;
+      const idealR = propR * totalBase;
+      const idealG = propG * totalBase;
+      const idealB = propB * totalBase;
+      const idealW = extraWhite * totalBase;
+      const idealK = extraBlack * totalBase;
+
+      let segR = Math.floor(idealR);
+      let segG = Math.floor(idealG);
+      let segB = Math.floor(idealB);
+      let segW = Math.floor(idealW);
+      let segK = Math.floor(idealK);
+
+      let assigned = segR + segG + segB + segW + segK;
+      let remaining = totalBase - assigned;
+
+      const fractions = [
+        { c: 'R', rem: idealR - segR },
+        { c: 'G', rem: idealG - segG },
+        { c: 'B', rem: idealB - segB },
+        { c: 'W', rem: idealW - segW },
+        { c: 'K', rem: idealK - segK }
+      ].sort((a, b) => b.rem - a.rem);
+
+      for (let i = 0; i < remaining; i++) {
+        const ch = fractions[i % fractions.length].c;
+        if (ch === 'R') segR++;
+        else if (ch === 'G') segG++;
+        else if (ch === 'B') segB++;
+        else if (ch === 'W') segW++;
+        else if (ch === 'K') segK++;
+      }
+
+      let basePattern = [];
+      for (let i = 0; i < segR; i++) basePattern.push("#FF0000");
+      for (let i = 0; i < segG; i++) basePattern.push("#00FF00");
+      for (let i = 0; i < segB; i++) basePattern.push("#0000FF");
+      for (let i = 0; i < segW; i++) basePattern.push("#FFFFFF");
+      for (let i = 0; i < segK; i++) basePattern.push("#000000");
+
+      while (basePattern.length < totalBase) {
+        basePattern.push("#FF0000");
+      }
+      if (basePattern.length > totalBase) {
+        basePattern = basePattern.slice(0, totalBase);
+      }
+      return basePattern;
+    }
+
+    // Draw the wheel on the canvas.
+    function drawWheel() {
+      colorSwatch.style.backgroundColor = colorInput.value;
+      const basePattern = computeBasePattern();
+      const mode = layoutSelect.value; // "12" or "48"
+      let wedgeColors = (mode === "12") ? basePattern : basePattern.concat(basePattern, basePattern, basePattern);
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const totalSegments = wedgeColors.length;
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = canvas.width / 2 - 6;
+      const angleStep = (2 * Math.PI) / totalSegments;
+      let currentAngle = 0;
+      for (let i = 0; i < totalSegments; i++) {
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY);
+        ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + angleStep);
+        ctx.closePath();
+        ctx.fillStyle = wedgeColors[i];
+        ctx.fill();
+        currentAngle += angleStep;
+      }
+      // Outer cutting guide.
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, canvas.width/2 - 3, 0, 2 * Math.PI);
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = "black";
+      ctx.stroke();
+    }
+
+    // Map slider value to duration such that:
+    // slider min (0.05) -> duration = 1.0 sec (1×)
+    // slider max (10) -> duration = 0.1 sec (10×)
+    function computeDuration(sliderValue) {
+      const m = 0.09045; // slope: (1.0 - 0.1) / (10 - 0.05)
+      const c = 1.0 + m * 0.05; // intercept
+      return c - m * sliderValue;
+    }
+
+    // Toggle spin animation.
+    function toggleSpin() {
+      const duration = computeDuration(parseFloat(speedSlider.value));
+      speedValue.textContent = (1 / duration).toFixed(2) + "x";
+      if (!isSpinning) {
+        canvas.classList.add("spinning");
+        canvas.style.animationDuration = duration + "s";
+        spinButton.textContent = "Stop";
+        isSpinning = true;
+      } else {
+        canvas.classList.remove("spinning");
+        spinButton.textContent = "Spin";
+        isSpinning = false;
+      }
+    }
+
+    // Event listeners.
+    colorInput.addEventListener("input", drawWheel);
+    brightnessToggle.addEventListener("change", drawWheel);
+    layoutSelect.addEventListener("change", drawWheel);
+    speedSlider.addEventListener("input", () => {
+      const duration = computeDuration(parseFloat(speedSlider.value));
+      speedValue.textContent = (1 / duration).toFixed(2) + "x";
+      if (isSpinning) {
+        canvas.style.animationDuration = duration + "s";
+      }
+    });
+    spinButton.addEventListener("click", toggleSpin);
+    printButton.addEventListener("click", () => {
+      if (isSpinning) toggleSpin();
+      window.print();
+    });
+
+    // Initial draw.
+    drawWheel();
+  </script>
+</body>
+</html>
